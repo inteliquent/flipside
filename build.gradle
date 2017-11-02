@@ -9,7 +9,6 @@ repositories {
 
 apply plugin: 'groovy'
 apply plugin: 'maven'
-apply plugin: 'signing'
 apply plugin: 'idea'
 
 ext.artifactId = 'flipside'
@@ -67,10 +66,6 @@ artifacts {
     archives jar, javadocJar, sourcesJar
 }
 
-signing {
-    sign configurations.archives
-}
-
 test {
     String testType = System.properties['test.type']
     if (testType == 'integration') {
@@ -113,12 +108,6 @@ test {
     }
 }
 
-// Only *require* signing if we are uploading
-gradle.taskGraph.whenReady { taskGraph ->
-    tasks.withType(org.gradle.plugins.signing.Sign).all {
-        required = taskGraph.hasTask(":uploadArchives")
-    }
-}
 
 task integrationTest(type: Test) {
     description = 'Runs the integration tests :D'
@@ -135,51 +124,11 @@ task wrapper(type: Wrapper) {
     gradleVersion = '2.14'
 }
 
-def username = 'username'
-def password = 'password'
-if(hasProperty('sonatypeUsername')) {
-    username = sonatypeUsername
-}
-if(hasProperty('sonatypePassword')) {
-    password = sonatypePassword
-}
-
 uploadArchives {
-    repositories {
-        mavenDeployer {
-            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
-
-            repository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
-                authentication(userName: username, password: password)
-            }
-
-            pom.project {
-                name 'Flipsde'
-                packaging 'jar'
-                description 'A simple Options library for Groovy'
-                url 'https://github.com/johnnywey/flipside'
-
-                scm {
-                    url 'scm:git@github.com:johnnywey/flipside.git'
-                    connection 'scm:git@github.com:johnnywey/flipside.git'
-                    developerConnection 'scm:git@github.com:johnnywey/flipside.git'
-                }
-
-                licenses {
-                    license {
-                        name 'MIT License'
-                        url 'http://opensource.org/licenses/MIT'
-                        distribution 'repo'
-                    }
-                }
-
-               developers {
-                    developer {
-                        id 'johnnywey'
-                        name 'Johnny Wey'
-                   }
-               }
-           }
+    repositories.mavenDeployer {
+        repository(url: "http://jenkins.layered.com:8081/artifactory/ext-snapshot-local/") {
+            authentication(userName: "dev", password: "artifactory dev user")
         }
+        uniqueVersion = false
     }
 }
